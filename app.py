@@ -72,6 +72,36 @@ def show_finding(finding: Finding) -> None:
 
 
 st.set_page_config(page_title="Columnaut", page_icon="🧭", layout="wide")
+st.markdown(
+    """
+    <style>
+    div[data-testid="stTabs"] [role="tablist"] {
+        gap: 0.5rem;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.35);
+    }
+
+    div[data-testid="stTab"] {
+        min-height: 3rem;
+        padding: 0.75rem 1rem;
+    }
+
+    div[data-testid="stTab"] p {
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+
+    div[data-testid="stTab"][aria-selected="true"] p {
+        font-weight: 700;
+    }
+
+    div[data-testid="stTab"] .react-aria-SelectionIndicator {
+        height: 4px;
+        border-radius: 4px 4px 0 0;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 st.title("Columnaut")
 st.caption("Explore your data before you depend on it.")
 
@@ -145,25 +175,26 @@ if loaded.sheet_name:
 else:
     st.caption(f"Source: {loaded.source_name} · Format: {loaded.source_format.upper()}")
 
-if loaded.warnings:
-    st.subheader(f"Import findings ({len(loaded.warnings)})")
-    for finding in loaded.warnings:
-        show_finding(finding)
-
-if table_profile.findings:
-    st.subheader(f"Profile findings ({len(table_profile.findings)})")
-    st.caption(
-        "Severity describes potential impact; confidence describes how certain the "
-        "interpretation is. Columnaut does not change the source data."
-    )
-    for finding in table_profile.findings:
-        show_finding(finding)
-else:
-    st.success("No generic profile findings were detected.")
-
-preview_tab, columns_tab, detail_tab = st.tabs(
-    ["Data preview", "Column overview", "Column details"]
+findings_tab, preview_tab, columns_tab, detail_tab = st.tabs(
+    ["Findings", "Data preview", "Column overview", "Column details"]
 )
+with findings_tab:
+    if loaded.warnings:
+        st.subheader(f"Import findings ({len(loaded.warnings)})")
+        for finding in loaded.warnings:
+            show_finding(finding)
+
+    if table_profile.findings:
+        st.subheader(f"Profile findings ({len(table_profile.findings)})")
+        st.caption(
+            "Severity describes potential impact; confidence describes how certain the "
+            "interpretation is. Columnaut does not change the source data."
+        )
+        for finding in table_profile.findings:
+            show_finding(finding)
+    else:
+        st.success("No generic profile findings were detected.")
+
 with preview_tab:
     st.dataframe(dataframe.head(500), width="stretch", height=520)
     if len(dataframe.index) > 500:
@@ -187,15 +218,23 @@ with detail_tab:
         )
         selected = table_profile.columns[selected_index]
         detail_metrics = st.columns(6)
-        detail_metrics[0].metric("Semantic type", selected.semantic_type.value)
-        detail_metrics[1].metric("Confidence", selected.semantic_confidence.value)
-        detail_metrics[2].metric("Exact dtype", selected.physical_type)
-        detail_metrics[3].metric("Unique", f"{selected.unique:,}")
-        detail_metrics[4].metric("Missing", f"{selected.missing:,}")
-        detail_metrics[5].metric("Pseudo-missing", f"{selected.pseudo_missing:,}")
-        st.caption(
-            f"Effective missingness: {selected.effective_missing_percent:.2f}%"
+        with detail_metrics[0]:
+            st.metric("Semantic type", selected.semantic_type.value)
+            st.caption(f"Inference confidence: {selected.semantic_confidence.value}")
+        detail_metrics[1].metric("Exact dtype", selected.physical_type)
+        detail_metrics[2].metric("Unique", f"{selected.unique:,}")
+        detail_metrics[3].metric(
+            "Duplicates",
+            f"{selected.duplicates:,}",
+            help="Repeated non-missing values beyond their first occurrence.",
         )
+        with detail_metrics[4]:
+            st.metric("Missing", f"{selected.missing:,}")
+            st.caption(
+                "Effective including pseudo-missing: "
+                f"{selected.effective_missing_percent:.2f}%"
+            )
+        detail_metrics[5].metric("Pseudo-missing", f"{selected.pseudo_missing:,}")
 
         statistics_column, distribution_column = st.columns(2)
         with statistics_column:

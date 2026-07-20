@@ -73,6 +73,7 @@ class ColumnProfile:
     pseudo_missing: int
     effective_missing_percent: float
     unique: int
+    duplicates: int
     statistics: tuple[tuple[str, str], ...]
     distribution: tuple[DistributionBucket, ...]
     findings: tuple[Finding, ...]
@@ -510,6 +511,7 @@ def profile_column(series: pd.Series, column: str | None = None) -> ColumnProfil
             round(100 * (missing_count + pseudo_count) / row_count, 2) if row_count else 0.0
         ),
         unique=unique,
+        duplicates=len(usable.index) - unique,
         statistics=statistics,
         distribution=distribution,
         findings=tuple(findings),
@@ -535,8 +537,8 @@ def column_profile_frame(profile: TableProfile) -> pd.DataFrame:
             {
                 "column": column.column,
                 "exact dtype": column.physical_type,
-                "semantic type": column.semantic_type.value,
-                "confidence": column.semantic_confidence.value,
+                "inferred semantic type": column.semantic_type.value,
+                "inference confidence": column.semantic_confidence.value,
                 "non-missing": column.non_missing,
                 "missing": column.missing,
                 "pseudo-missing": column.pseudo_missing,

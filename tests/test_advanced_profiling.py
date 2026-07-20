@@ -33,6 +33,16 @@ def test_pseudo_missing_values_are_counted_without_changing_the_series() -> None
     assert finding.affected_count == 5
 
 
+def test_duplicate_count_excludes_missing_and_pseudo_missing_values() -> None:
+    profile = profile_column(
+        pd.Series([None, None, "ready", "ready", "ready", "done", "unknown", "unknown"]),
+        "status",
+    )
+
+    assert profile.unique == 2
+    assert profile.duplicates == 2
+
+
 def test_numeric_strings_with_one_exception_report_inference_uncertainty() -> None:
     series = pd.Series([str(number) for number in range(1, 10)] + ["oops"])
 
@@ -132,6 +142,8 @@ def test_table_profile_supports_arrow_backed_pandas_columns() -> None:
     assert all("[pyarrow]" in column.physical_type for column in profile.columns)
 
     overview = column_profile_frame(profile)
+    assert "inferred semantic type" in overview.columns
+    assert "inference confidence" in overview.columns
     assert overview["exact dtype"].tolist() == [
         "int64[pyarrow]",
         "int64[pyarrow]",
