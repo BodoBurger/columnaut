@@ -21,7 +21,11 @@ class CsvAdapter(TabularAdapter):
         options: LoadOptions | None = None,
     ) -> LoadedTable:
         del options
-        dataframe = pd.read_csv(BytesIO(payload))
+        dataframe = pd.read_csv(
+            BytesIO(payload),
+            keep_default_na=False,
+            na_values=[""],
+        )
         return LoadedTable(
             dataframe=dataframe,
             source_name=source_name,

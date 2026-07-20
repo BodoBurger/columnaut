@@ -5,18 +5,20 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from columnaut.ingestion.registry import default_registry  # noqa: E402
-from columnaut.models import LoadOptions  # noqa: E402
-from columnaut.profiling.basic import (  # noqa: E402
-    column_overview,
-    dataset_overview,
-    format_bytes,
+from columnaut.models import Finding, FindingSeverity, LoadOptions  # noqa: E402
+from columnaut.profiling.advanced import (  # noqa: E402
+    TableProfile,
+    column_profile_frame,
+    profile_table,
 )
+from columnaut.profiling.basic import dataset_overview, format_bytes  # noqa: E402
 
 
 @st.cache_data(show_spinner=False)
@@ -38,9 +40,40 @@ def load_source(
     )
 
 
+@st.cache_data(show_spinner=False)
+def build_profile(dataframe: pd.DataFrame) -> TableProfile:
+    return profile_table(dataframe)
+
+
+def finding_text(finding: Finding) -> str:
+    details = [
+        f"Severity: {finding.severity.value}",
+        f"Confidence: {finding.confidence.value}",
+    ]
+    if finding.affected_count is not None:
+        details.append(f"Affected: {finding.affected_count:,}")
+    if finding.examples:
+        details.append(f"Examples: {', '.join(finding.examples)}")
+    if finding.columns:
+        details.append(f"Columns: {', '.join(finding.columns)}")
+    if finding.row_numbers:
+        details.append(f"Source rows: {', '.join(map(str, finding.row_numbers))}")
+    return f"**{finding.title}** — {finding.message}  \n{' · '.join(details)}"
+
+
+def show_finding(finding: Finding) -> None:
+    text = finding_text(finding)
+    if finding.severity == FindingSeverity.ERROR:
+        st.error(text)
+    elif finding.severity == FindingSeverity.WARNING:
+        st.warning(text)
+    else:
+        st.info(text)
+
+
 st.set_page_config(page_title="Columnaut", page_icon="🧭", layout="wide")
 st.title("Columnaut")
-st.caption("Get familiar with a tabular dataset before you analyze or model it.")
+st.caption("Explore your data before you depend on it.")
 
 uploaded_file = st.file_uploader(
     "Choose a CSV, Parquet, or Excel file",
@@ -90,6 +123,7 @@ except Exception as error:
 
 dataframe = loaded.dataframe
 overview = dataset_overview(dataframe)
+table_profile = build_profile(dataframe)
 
 st.subheader("Dataset overview")
 metric_columns = st.columns(5)
@@ -113,20 +147,76 @@ else:
 
 if loaded.warnings:
     st.subheader(f"Import findings ({len(loaded.warnings)})")
-    for warning in loaded.warnings:
-        details: list[str] = []
-        if warning.columns:
-            details.append(f"Columns: {', '.join(warning.columns)}")
-        if warning.row_numbers:
-            details.append(f"Source rows: {', '.join(map(str, warning.row_numbers))}")
-        detail_text = f"  \n{' · '.join(details)}" if details else ""
-        st.warning(f"**{warning.title}** — {warning.message}{detail_text}")
+    for finding in loaded.warnings:
+        show_finding(finding)
 
-preview_tab, columns_tab = st.tabs(["Data preview", "Columns"])
+if table_profile.findings:
+    st.subheader(f"Profile findings ({len(table_profile.findings)})")
+    st.caption(
+        "Severity describes potential impact; confidence describes how certain the "
+        "interpretation is. Columnaut does not change the source data."
+    )
+    for finding in table_profile.findings:
+        show_finding(finding)
+else:
+    st.success("No generic profile findings were detected.")
+
+preview_tab, columns_tab, detail_tab = st.tabs(
+    ["Data preview", "Column overview", "Column details"]
+)
 with preview_tab:
-    st.dataframe(dataframe.head(500), use_container_width=True, height=520)
+    st.dataframe(dataframe.head(500), width="stretch", height=520)
     if len(dataframe.index) > 500:
         st.caption("Showing the first 500 rows.")
 
 with columns_tab:
-    st.dataframe(column_overview(dataframe), use_container_width=True, hide_index=True)
+    st.dataframe(
+        column_profile_frame(table_profile),
+        width="stretch",
+        hide_index=True,
+    )
+
+with detail_tab:
+    if not table_profile.columns:
+        st.info("This dataset has no columns to profile.")
+    else:
+        selected_index = st.selectbox(
+            "Column",
+            options=range(len(table_profile.columns)),
+            format_func=lambda index: table_profile.columns[index].column,
+        )
+        selected = table_profile.columns[selected_index]
+        detail_metrics = st.columns(5)
+        detail_metrics[0].metric("Semantic type", selected.semantic_type.value)
+        detail_metrics[1].metric("Confidence", selected.semantic_confidence.value)
+        detail_metrics[2].metric("Unique", f"{selected.unique:,}")
+        detail_metrics[3].metric("Missing", f"{selected.missing:,}")
+        detail_metrics[4].metric("Pseudo-missing", f"{selected.pseudo_missing:,}")
+        st.caption(
+            f"Physical type: {selected.physical_type} · Effective missingness: "
+            f"{selected.effective_missing_percent:.2f}%"
+        )
+
+        statistics_column, distribution_column = st.columns(2)
+        with statistics_column:
+            st.markdown("#### Type-specific statistics")
+            if selected.statistics:
+                st.dataframe(
+                    pd.DataFrame(selected.statistics, columns=["Statistic", "Value"]),
+                    width="stretch",
+                    hide_index=True,
+                )
+            else:
+                st.caption("No additional statistics apply to this column.")
+        with distribution_column:
+            st.markdown("#### Distribution")
+            if selected.distribution:
+                distribution = pd.DataFrame(
+                    [
+                        {"Bucket or value": bucket.label, "Count": bucket.count}
+                        for bucket in selected.distribution
+                    ]
+                ).set_index("Bucket or value")
+                st.bar_chart(distribution)
+            else:
+                st.caption("No non-missing values are available for a distribution.")

@@ -3,7 +3,9 @@
 Columnaut is a Python/Streamlit application for getting familiar with tabular data before
 using it in analyses, forecasts, or predictive models.
 
-Milestone 1 provides:
+> Explore your data before you depend on it.
+
+Columnaut provides:
 
 - CSV and Parquet ingestion
 - Excel `.xlsx` and legacy `.xls` ingestion
@@ -12,6 +14,12 @@ Milestone 1 provides:
 - Warnings for duplicate or blank headers, merged cells, empty rows and columns, mixed value
   types, and duplicate rows
 - A reusable adapter boundary for future data sources
+- Data-type-specific statistics and distributions
+- Recognition of common pseudo-missing strings and suspicious sentinel values without changing
+  the source data
+- Semantic type inference with explicit confidence
+- Generic range and sensibility checks for non-finite numbers, IQR outliers, and implausible dates
+- Structured findings with separate severity and confidence
 
 ## Run locally
 
@@ -69,7 +77,13 @@ Excel allows mixed cell types, decorative rows, merged cells, and multiple unrel
 sheet. Columnaut retains suspicious structure and reports it instead of silently deleting it.
 Legacy `.xls` reading uses `xlrd`; `.xlsx` reading and merged-cell inspection use `openpyxl`.
 
-## Next milestone
+## Profiling and AI boundary
 
-Milestone 2 should add data-type-specific profiles, pseudo-missing string detection, semantic type
-inference, value distributions, range checks, and a structured finding model.
+Columnaut calculates profiles and findings with deterministic Python code. A future AI assistant
+should interpret these structured results, explain their implications, and help users turn findings
+into user-approved validation rules. It should not calculate statistics itself or receive the full
+raw dataset by default.
+
+Pseudo-missing markers and generic sensibility checks are observations, not automatic cleaning
+rules. The report keeps the original values intact and uses confidence to distinguish strong facts
+from interpretations that require domain context.

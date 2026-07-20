@@ -38,7 +38,12 @@ class ExcelAdapter(TabularAdapter):
             sheet_name = options.sheet_name or workbook.sheet_names[0]
             if sheet_name not in workbook.sheet_names:
                 raise ValueError(f"Sheet '{sheet_name}' does not exist in this workbook.")
-            raw = workbook.parse(sheet_name=sheet_name, header=None)
+            raw = workbook.parse(
+                sheet_name=sheet_name,
+                header=None,
+                keep_default_na=False,
+                na_values=[""],
+            )
 
         if raw.empty:
             return LoadedTable(
