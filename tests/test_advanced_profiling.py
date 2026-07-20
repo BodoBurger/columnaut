@@ -3,6 +3,7 @@ import pandas as pd
 from columnaut.models import FindingConfidence, FindingSeverity
 from columnaut.profiling.advanced import (
     SemanticType,
+    column_profile_frame,
     profile_column,
     profile_table,
     pseudo_missing_mask,
@@ -107,4 +108,32 @@ def test_table_profile_handles_duplicate_dataframe_column_names_by_position() ->
     assert [column.semantic_type for column in profile.columns] == [
         SemanticType.NUMERIC,
         SemanticType.CATEGORICAL,
+    ]
+
+
+def test_table_profile_supports_arrow_backed_pandas_columns() -> None:
+    dataframe = pd.DataFrame(
+        {
+            "customer_id": [1, 2, 3],
+            "amount": [10.0, None, 30.0],
+            "status": ["open", "unknown", "closed"],
+        }
+    ).convert_dtypes(dtype_backend="pyarrow")
+
+    profile = profile_table(dataframe)
+
+    assert [column.semantic_type for column in profile.columns] == [
+        SemanticType.IDENTIFIER,
+        SemanticType.NUMERIC,
+        SemanticType.CATEGORICAL,
+    ]
+    assert profile.columns[1].missing == 1
+    assert profile.columns[2].pseudo_missing == 1
+    assert all("[pyarrow]" in column.physical_type for column in profile.columns)
+
+    overview = column_profile_frame(profile)
+    assert overview["exact dtype"].tolist() == [
+        "int64[pyarrow]",
+        "int64[pyarrow]",
+        "string[pyarrow]",
     ]

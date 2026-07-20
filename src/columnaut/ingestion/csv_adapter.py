@@ -25,6 +25,7 @@ class CsvAdapter(TabularAdapter):
             BytesIO(payload),
             keep_default_na=False,
             na_values=[""],
+            dtype_backend="pyarrow",
         )
         return LoadedTable(
             dataframe=dataframe,

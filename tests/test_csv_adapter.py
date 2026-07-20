@@ -1,3 +1,5 @@
+import pandas as pd
+
 from columnaut.ingestion.csv_adapter import CsvAdapter
 
 
@@ -9,6 +11,7 @@ def test_csv_adapter_loads_table_and_common_findings() -> None:
     assert loaded.dataframe.shape == (3, 3)
     assert list(loaded.dataframe.columns) == ["id", "name", "score"]
     assert loaded.dataframe["name"].isna().sum() == 2
+    assert all(isinstance(dtype, pd.ArrowDtype) for dtype in loaded.dataframe.dtypes)
     assert "duplicate_rows" in {warning.code for warning in loaded.warnings}
 
 

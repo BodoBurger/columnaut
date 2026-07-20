@@ -9,6 +9,7 @@ Columnaut provides:
 
 - CSV and Parquet ingestion
 - Excel `.xlsx` and legacy `.xls` ingestion
+- Arrow-backed pandas columns where source values have a consistent representable type
 - Excel worksheet and header-row selection
 - A data preview and basic dataset/column characteristics
 - Warnings for duplicate or blank headers, merged cells, empty rows and columns, mixed value
@@ -76,6 +77,9 @@ such as `column_4`.
 Excel allows mixed cell types, decorative rows, merged cells, and multiple unrelated tables in one
 sheet. Columnaut retains suspicious structure and reports it instead of silently deleting it.
 Legacy `.xls` reading uses `xlrd`; `.xlsx` reading and merged-cell inspection use `openpyxl`.
+Imported tables use pandas' PyArrow dtype backend for consistent nullable types and efficient
+interchange. Genuinely heterogeneous Excel columns remain object-backed so their source values can
+be retained and reported without coercion.
 
 ## Profiling and AI boundary
 

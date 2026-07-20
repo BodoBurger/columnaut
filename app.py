@@ -186,15 +186,15 @@ with detail_tab:
             format_func=lambda index: table_profile.columns[index].column,
         )
         selected = table_profile.columns[selected_index]
-        detail_metrics = st.columns(5)
+        detail_metrics = st.columns(6)
         detail_metrics[0].metric("Semantic type", selected.semantic_type.value)
         detail_metrics[1].metric("Confidence", selected.semantic_confidence.value)
-        detail_metrics[2].metric("Unique", f"{selected.unique:,}")
-        detail_metrics[3].metric("Missing", f"{selected.missing:,}")
-        detail_metrics[4].metric("Pseudo-missing", f"{selected.pseudo_missing:,}")
+        detail_metrics[2].metric("Exact dtype", selected.physical_type)
+        detail_metrics[3].metric("Unique", f"{selected.unique:,}")
+        detail_metrics[4].metric("Missing", f"{selected.missing:,}")
+        detail_metrics[5].metric("Pseudo-missing", f"{selected.pseudo_missing:,}")
         st.caption(
-            f"Physical type: {selected.physical_type} · Effective missingness: "
-            f"{selected.effective_missing_percent:.2f}%"
+            f"Effective missingness: {selected.effective_missing_percent:.2f}%"
         )
 
         statistics_column, distribution_column = st.columns(2)

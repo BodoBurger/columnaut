@@ -534,7 +534,7 @@ def column_profile_frame(profile: TableProfile) -> pd.DataFrame:
         [
             {
                 "column": column.column,
-                "physical type": column.physical_type,
+                "exact dtype": column.physical_type,
                 "semantic type": column.semantic_type.value,
                 "confidence": column.semantic_confidence.value,
                 "non-missing": column.non_missing,

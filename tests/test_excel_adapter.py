@@ -48,6 +48,7 @@ def test_excel_load_honors_sheet_and_header_row() -> None:
 
     assert list(loaded.dataframe.columns) == ["code"]
     assert loaded.dataframe["code"].tolist() == ["DE", "FR"]
+    assert isinstance(loaded.dataframe["code"].dtype, pd.ArrowDtype)
 
 
 def test_excel_load_reports_structural_problems() -> None:
@@ -73,6 +74,8 @@ def test_excel_load_reports_structural_problems() -> None:
         "empty_columns",
         "mixed_value_types",
     } <= warning_codes
+    assert isinstance(loaded.dataframe["Account"].dtype, pd.ArrowDtype)
+    assert loaded.dataframe["Amount"].dtype == object
 
 
 def test_excel_adapter_declares_legacy_xls_support() -> None:

@@ -72,7 +72,9 @@ class ExcelAdapter(TabularAdapter):
         )
         dataframe = raw.iloc[options.header_row + 1 :].copy()
         dataframe.columns = headers
-        dataframe = dataframe.reset_index(drop=True).infer_objects().convert_dtypes()
+        dataframe = dataframe.reset_index(drop=True).infer_objects().convert_dtypes(
+            dtype_backend="pyarrow"
+        )
 
         warnings: list[IngestionWarning] = []
         if duplicate_headers:

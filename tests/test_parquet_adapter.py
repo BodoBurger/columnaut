@@ -12,5 +12,7 @@ def test_parquet_adapter_loads_table() -> None:
 
     loaded = ParquetAdapter().load(buffer.getvalue(), "sample.parquet")
 
-    pd.testing.assert_frame_equal(loaded.dataframe, source)
+    expected = source.convert_dtypes(dtype_backend="pyarrow")
+    pd.testing.assert_frame_equal(loaded.dataframe, expected)
+    assert all(isinstance(dtype, pd.ArrowDtype) for dtype in loaded.dataframe.dtypes)
     assert loaded.source_format == "parquet"

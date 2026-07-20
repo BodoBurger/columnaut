@@ -21,7 +21,7 @@ class ParquetAdapter(TabularAdapter):
         options: LoadOptions | None = None,
     ) -> LoadedTable:
         del options
-        dataframe = pd.read_parquet(BytesIO(payload))
+        dataframe = pd.read_parquet(BytesIO(payload), dtype_backend="pyarrow")
         return LoadedTable(
             dataframe=dataframe,
             source_name=source_name,
