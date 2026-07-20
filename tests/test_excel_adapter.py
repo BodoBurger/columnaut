@@ -49,6 +49,7 @@ def test_excel_load_honors_sheet_and_header_row() -> None:
     assert list(loaded.dataframe.columns) == ["code"]
     assert loaded.dataframe["code"].tolist() == ["DE", "FR"]
     assert isinstance(loaded.dataframe["code"].dtype, pd.ArrowDtype)
+    assert loaded.metadata["available_sheets"] == ("Transactions", "Countries")
 
 
 def test_excel_load_reports_structural_problems() -> None:

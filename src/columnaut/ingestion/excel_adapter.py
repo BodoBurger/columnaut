@@ -9,7 +9,7 @@ import pandas as pd
 
 from columnaut.ingestion.base import TabularAdapter
 from columnaut.ingestion.quality import common_table_warnings, make_unique_headers
-from columnaut.models import IngestionWarning, LoadedTable, LoadOptions, SourceInspection
+from columnaut.models import Finding, LoadedTable, LoadOptions, SourceInspection
 
 
 class ExcelAdapter(TabularAdapter):
@@ -34,9 +34,11 @@ class ExcelAdapter(TabularAdapter):
         if options.header_row < 0:
             raise ValueError("The header row must be zero or greater.")
 
+        source_format = Path(source_name).suffix.lower().lstrip(".")
         with pd.ExcelFile(BytesIO(payload)) as workbook:
-            sheet_name = options.sheet_name or workbook.sheet_names[0]
-            if sheet_name not in workbook.sheet_names:
+            available_sheets = tuple(workbook.sheet_names)
+            sheet_name = options.sheet_name or available_sheets[0]
+            if sheet_name not in available_sheets:
                 raise ValueError(f"Sheet '{sheet_name}' does not exist in this workbook.")
             raw = workbook.parse(
                 sheet_name=sheet_name,
@@ -49,16 +51,17 @@ class ExcelAdapter(TabularAdapter):
             return LoadedTable(
                 dataframe=pd.DataFrame(),
                 source_name=source_name,
-                source_format=Path(source_name).suffix.lower().lstrip("."),
+                source_format=source_format,
                 sheet_name=sheet_name,
                 header_row=options.header_row,
                 warnings=[
-                    IngestionWarning(
+                    Finding(
                         code="empty_sheet",
                         title="Empty sheet",
                         message=f"Sheet '{sheet_name}' does not contain tabular data.",
                     )
                 ],
+                metadata={"available_sheets": available_sheets},
             )
 
         if options.header_row >= len(raw.index):
@@ -76,11 +79,11 @@ class ExcelAdapter(TabularAdapter):
             dtype_backend="pyarrow"
         )
 
-        warnings: list[IngestionWarning] = []
+        warnings: list[Finding] = []
         if duplicate_headers:
             unique_duplicates = tuple(dict.fromkeys(duplicate_headers))
             warnings.append(
-                IngestionWarning(
+                Finding(
                     code="duplicate_headers",
                     title="Duplicate column headers",
                     message=(
@@ -93,7 +96,7 @@ class ExcelAdapter(TabularAdapter):
 
         if blank_positions:
             warnings.append(
-                IngestionWarning(
+                Finding(
                     code="header_gaps",
                     title="Blank cells in the header row",
                     message=(
@@ -115,11 +118,11 @@ class ExcelAdapter(TabularAdapter):
         return LoadedTable(
             dataframe=dataframe,
             source_name=source_name,
-            source_format=Path(source_name).suffix.lower().lstrip("."),
+            source_format=source_format,
             sheet_name=sheet_name,
             header_row=options.header_row,
             warnings=warnings,
-            metadata={"available_sheets": tuple(self.inspect(payload, source_name).sheet_names)},
+            metadata={"available_sheets": available_sheets},
         )
 
     @staticmethod
@@ -127,7 +130,7 @@ class ExcelAdapter(TabularAdapter):
         payload: bytes,
         source_name: str,
         sheet_name: str,
-    ) -> list[IngestionWarning]:
+    ) -> list[Finding]:
         if Path(source_name).suffix.lower() != ".xlsx":
             return []
 
@@ -146,7 +149,7 @@ class ExcelAdapter(TabularAdapter):
         examples = ", ".join(ranges[:5])
         suffix = "" if len(ranges) <= 5 else f" and {len(ranges) - 5} more"
         return [
-            IngestionWarning(
+            Finding(
                 code="merged_cells",
                 title="Merged cells",
                 message=(

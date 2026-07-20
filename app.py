@@ -11,18 +11,25 @@ import streamlit as st
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from columnaut.ingestion.registry import default_registry  # noqa: E402
-from columnaut.models import Finding, FindingSeverity, LoadOptions  # noqa: E402
-from columnaut.profiling.advanced import (  # noqa: E402
+from columnaut.ingestion import default_registry  # noqa: E402
+from columnaut.models import (  # noqa: E402
+    Finding,
+    FindingSeverity,
+    LoadedTable,
+    LoadOptions,
+    SourceInspection,
+)
+from columnaut.profiling import (  # noqa: E402
     TableProfile,
     column_profile_frame,
+    dataset_overview,
+    format_bytes,
     profile_table,
 )
-from columnaut.profiling.basic import dataset_overview, format_bytes  # noqa: E402
 
 
 @st.cache_data(show_spinner=False)
-def inspect_source(payload: bytes, source_name: str):
+def inspect_source(payload: bytes, source_name: str) -> SourceInspection:
     return default_registry.for_source(source_name).inspect(payload, source_name)
 
 
@@ -32,7 +39,7 @@ def load_source(
     source_name: str,
     sheet_name: str | None,
     header_row: int,
-):
+) -> LoadedTable:
     return default_registry.for_source(source_name).load(
         payload,
         source_name,
@@ -118,7 +125,6 @@ payload = uploaded_file.getvalue()
 source_name = uploaded_file.name
 
 try:
-    adapter = default_registry.for_source(source_name)
     inspection = inspect_source(payload, source_name)
 except Exception as error:
     st.error(f"The file could not be inspected: {error}")

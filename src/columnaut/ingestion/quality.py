@@ -10,7 +10,7 @@ from typing import Any
 
 import pandas as pd
 
-from columnaut.models import IngestionWarning
+from columnaut.models import Finding
 
 
 def _is_missing(value: Any) -> bool:
@@ -65,16 +65,16 @@ def common_table_warnings(
     dataframe: pd.DataFrame,
     *,
     source_row_offset: int = 0,
-) -> list[IngestionWarning]:
+) -> list[Finding]:
     """Find structural issues without imposing domain-specific expectations."""
 
-    warnings: list[IngestionWarning] = []
+    warnings: list[Finding] = []
 
     empty_rows = dataframe.index[dataframe.isna().all(axis=1)].tolist()
     if empty_rows:
         displayed_rows = tuple(int(index) + source_row_offset for index in empty_rows[:20])
         warnings.append(
-            IngestionWarning(
+            Finding(
                 code="empty_rows",
                 title="Entirely empty rows",
                 message=(
@@ -88,7 +88,7 @@ def common_table_warnings(
     empty_columns = tuple(str(column) for column in dataframe.columns[dataframe.isna().all()])
     if empty_columns:
         warnings.append(
-            IngestionWarning(
+            Finding(
                 code="empty_columns",
                 title="Entirely empty columns",
                 message=f"Found {len(empty_columns)} column(s) without any values.",
@@ -104,7 +104,7 @@ def common_table_warnings(
         }
         if len(families) > 1:
             warnings.append(
-                IngestionWarning(
+                Finding(
                     code="mixed_value_types",
                     title="Mixed value types",
                     message=(
@@ -119,7 +119,7 @@ def common_table_warnings(
     duplicate_count = int(non_empty.duplicated().sum()) if not non_empty.empty else 0
     if duplicate_count:
         warnings.append(
-            IngestionWarning(
+            Finding(
                 code="duplicate_rows",
                 title="Duplicate rows",
                 message=f"Found {duplicate_count} row(s) that duplicate an earlier row.",

@@ -9,7 +9,12 @@ from columnaut.profiling.advanced import (
     profile_table,
     pseudo_missing_mask,
 )
-from columnaut.profiling.basic import DatasetOverview, column_overview, dataset_overview
+from columnaut.profiling.basic import (
+    DatasetOverview,
+    column_overview,
+    dataset_overview,
+    format_bytes,
+)
 
 __all__ = [
     "ColumnProfile",
@@ -19,6 +24,7 @@ __all__ = [
     "column_overview",
     "column_profile_frame",
     "dataset_overview",
+    "format_bytes",
     "profile_column",
     "profile_table",
     "pseudo_missing_mask",
