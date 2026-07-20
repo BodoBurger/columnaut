@@ -11,10 +11,14 @@ from columnaut.ingestion.parquet_adapter import ParquetAdapter
 
 
 class AdapterRegistry:
+    """Resolve a source filename to the first registered adapter that supports it."""
+
     def __init__(self, adapters: Iterable[TabularAdapter]) -> None:
         self._adapters = tuple(adapters)
 
     def for_source(self, source_name: str) -> TabularAdapter:
+        """Return the matching adapter or raise an error listing supported extensions."""
+
         for adapter in self._adapters:
             if adapter.supports(source_name):
                 return adapter

@@ -89,6 +89,13 @@ class TableProfile:
 
 @dataclass(frozen=True, slots=True)
 class SemanticInference:
+    """An inferred meaning together with values converted for downstream calculations.
+
+    ``converted`` contains only values successfully interpreted as the inferred type and may
+    therefore be shorter than the source series. ``invalid_count`` records excluded values that
+    supported a high-enough match ratio for inference but failed conversion individually.
+    """
+
     semantic_type: SemanticType
     confidence: FindingConfidence
     converted: pd.Series
@@ -301,6 +308,12 @@ def _column_findings(
     inference: SemanticInference,
     pseudo_mask: pd.Series,
 ) -> list[Finding]:
+    """Create deterministic findings from missingness, inferred type, and distribution rules.
+
+    The generic thresholds in this function identify values worth reviewing; they do not assert
+    domain-specific invalidity or alter the source series.
+    """
+
     findings: list[Finding] = []
     row_count = len(series.index)
     missing_count = int(series.isna().sum())
