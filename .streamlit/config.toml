@@ -1,0 +1,9 @@
+[browser]
+gatherUsageStats = false
+
+[server]
+address = "0.0.0.0"
+fileWatcherType = "none"
+headless = true
+port = 8501
+

@@ -1,0 +1,15 @@
+.git
+.gitattributes
+.gitignore
+.venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+.agents
+tests
+build
+dist
+*.egg-info
+.streamlit/secrets.toml
+
