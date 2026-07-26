@@ -47,8 +47,8 @@ def column_overview(dataframe: pd.DataFrame) -> pd.DataFrame:
 
     records: list[dict[str, object]] = []
     row_count = len(dataframe.index)
-    for column in dataframe.columns:
-        series = dataframe[column]
+    for position, column in enumerate(dataframe.columns):
+        series = dataframe.iloc[:, position]
         missing = int(series.isna().sum())
         try:
             unique = int(series.nunique(dropna=True))
