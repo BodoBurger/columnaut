@@ -43,6 +43,15 @@ def test_duplicate_count_excludes_missing_and_pseudo_missing_values() -> None:
     assert profile.duplicates == 2
 
 
+def test_profile_handles_unhashable_values() -> None:
+    profile = profile_column(pd.Series([["a"], ["a"], ["b"]], dtype=object), "items")
+
+    assert profile.semantic_type == SemanticType.CATEGORICAL
+    assert profile.unique == 2
+    assert profile.duplicates == 1
+    assert "constant_column" not in finding_codes(profile)
+
+
 def test_numeric_strings_with_one_exception_report_inference_uncertainty() -> None:
     series = pd.Series([str(number) for number in range(1, 10)] + ["oops"])
 
