@@ -96,10 +96,11 @@ def common_table_warnings(
             )
         )
 
-    for column in dataframe.columns:
+    for position, column in enumerate(dataframe.columns):
+        series = dataframe.iloc[:, position]
         families = {
             value_family(value)
-            for value in dataframe[column].tolist()
+            for value in series.tolist()
             if not _is_missing(value)
         }
         if len(families) > 1:
