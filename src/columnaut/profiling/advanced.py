@@ -1,4 +1,4 @@
-"""Deterministic, data-type-aware profiles for Milestone 2."""
+"""Deterministic, data-type-aware column and table profiles."""
 
 from __future__ import annotations
 
@@ -104,6 +104,15 @@ class SemanticInference:
 
 def _normalized_strings(series: pd.Series) -> pd.Series:
     return series.astype("string").str.strip().str.casefold()
+
+
+def _safe_nunique(series: pd.Series) -> int:
+    """Count distinct values, falling back to stable string representations."""
+
+    try:
+        return int(series.nunique(dropna=True))
+    except TypeError:
+        return int(series.dropna().astype("string").nunique(dropna=True))
 
 
 def pseudo_missing_mask(series: pd.Series) -> pd.Series:
@@ -375,7 +384,7 @@ def _column_findings(
         )
 
     usable = series.loc[series.notna() & ~pseudo_mask]
-    if len(usable.index) > 1 and usable.nunique(dropna=True) == 1:
+    if len(usable.index) > 1 and _safe_nunique(usable) == 1:
         findings.append(
             Finding(
                 code="constant_column",
@@ -506,10 +515,7 @@ def profile_column(series: pd.Series, column: str | None = None) -> ColumnProfil
         statistics = ()
         distribution = _value_distribution(usable)
 
-    try:
-        unique = int(usable.nunique(dropna=True))
-    except TypeError:
-        unique = int(usable.astype("string").nunique(dropna=True))
+    unique = _safe_nunique(usable)
 
     return ColumnProfile(
         column=column,
