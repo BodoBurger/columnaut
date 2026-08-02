@@ -33,6 +33,18 @@ def test_pseudo_missing_values_are_counted_without_changing_the_series() -> None
     assert finding.affected_count == 5
 
 
+def test_profile_handles_duplicate_index_labels_without_changing_the_series() -> None:
+    series = pd.Series(["N/A", "ready", "ready"], index=["row", "row", "row"])
+    original = series.copy()
+
+    profile = profile_column(series, "status")
+
+    assert profile.pseudo_missing == 1
+    assert profile.unique == 1
+    assert profile.duplicates == 1
+    pd.testing.assert_series_equal(series, original)
+
+
 def test_duplicate_count_excludes_missing_and_pseudo_missing_values() -> None:
     profile = profile_column(
         pd.Series([None, None, "ready", "ready", "ready", "done", "unknown", "unknown"]),
