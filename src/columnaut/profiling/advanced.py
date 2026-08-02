@@ -118,28 +118,19 @@ def _safe_nunique(series: pd.Series) -> int:
 def pseudo_missing_mask(series: pd.Series) -> pd.Series:
     """Identify common placeholders while leaving the original values untouched."""
 
-    mask = pd.Series(False, index=series.index, dtype=bool)
-    present = series.notna()
-    if not present.any():
-        return mask
+    def is_placeholder(value: object) -> bool:
+        if isinstance(value, str):
+            normalized = value.strip().casefold()
+            return normalized in PSEUDO_MISSING_STRINGS or (
+                normalized in SUSPICIOUS_SENTINEL_STRINGS
+            )
+        if isinstance(value, (int, float, np.integer, np.floating)) and not isinstance(
+            value, (bool, np.bool_)
+        ):
+            return value in SUSPICIOUS_NUMERIC_SENTINELS
+        return False
 
-    values = series.loc[present]
-    string_values = values.map(lambda value: isinstance(value, str))
-    if string_values.any():
-        normalized = _normalized_strings(values.loc[string_values])
-        mask.loc[normalized.index] = normalized.isin(
-            PSEUDO_MISSING_STRINGS | SUSPICIOUS_SENTINEL_STRINGS
-        )
-
-    numeric_values = values.map(
-        lambda value: isinstance(value, (int, float, np.integer, np.floating))
-        and not isinstance(value, (bool, np.bool_))
-    )
-    if numeric_values.any():
-        numeric = pd.to_numeric(values.loc[numeric_values], errors="coerce")
-        mask.loc[numeric.index] = numeric.isin(SUSPICIOUS_NUMERIC_SENTINELS)
-
-    return mask
+    return series.map(is_placeholder).astype(bool)
 
 
 def _identifier_likelihood(column: str, series: pd.Series) -> bool:
