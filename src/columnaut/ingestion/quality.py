@@ -70,15 +70,21 @@ def common_table_warnings(
 
     warnings: list[Finding] = []
 
-    empty_rows = dataframe.index[dataframe.isna().all(axis=1)].tolist()
-    if empty_rows:
-        displayed_rows = tuple(int(index) + source_row_offset for index in empty_rows[:20])
+    empty_row_positions = [
+        position
+        for position, is_empty in enumerate(dataframe.isna().all(axis=1))
+        if is_empty
+    ]
+    if empty_row_positions:
+        displayed_rows = tuple(
+            position + source_row_offset for position in empty_row_positions[:20]
+        )
         warnings.append(
             Finding(
                 code="empty_rows",
                 title="Entirely empty rows",
                 message=(
-                    f"Found {len(empty_rows)} entirely empty row(s). "
+                    f"Found {len(empty_row_positions)} entirely empty row(s). "
                     "They are retained so the source can be inspected faithfully."
                 ),
                 row_numbers=displayed_rows,
