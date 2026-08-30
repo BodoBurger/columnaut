@@ -24,3 +24,13 @@ def test_column_overview_handles_duplicate_column_names_by_position() -> None:
 
     assert overview["column"].tolist() == ["value", "value"]
     assert overview["unique"].tolist() == [2, 2]
+
+
+def test_dataset_overview_counts_duplicate_rows_with_unhashable_values() -> None:
+    dataframe = pd.DataFrame({"items": [[1, 2], [1, 2], [3]]})
+    original = dataframe.copy(deep=True)
+
+    overview = dataset_overview(dataframe)
+
+    assert overview.duplicate_rows == 1
+    pd.testing.assert_frame_equal(dataframe, original)
