@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from columnaut.tabular import duplicate_row_count
+
 
 @dataclass(frozen=True, slots=True)
 class DatasetOverview:
@@ -33,7 +35,7 @@ def dataset_overview(dataframe: pd.DataFrame) -> DatasetOverview:
         columns=int(dataframe.shape[1]),
         missing_cells=missing_cells,
         missing_percent=(100 * missing_cells / total_cells) if total_cells else 0.0,
-        duplicate_rows=int(dataframe.dropna(how="all").duplicated().sum()),
+        duplicate_rows=duplicate_row_count(dataframe),
         memory_bytes=int(dataframe.memory_usage(index=True, deep=True).sum()),
     )
 

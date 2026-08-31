@@ -11,6 +11,7 @@ from typing import Any
 import pandas as pd
 
 from columnaut.models import Finding
+from columnaut.tabular import duplicate_row_count
 
 
 def _is_missing(value: Any) -> bool:
@@ -122,8 +123,7 @@ def common_table_warnings(
                 )
             )
 
-    non_empty = dataframe.dropna(how="all")
-    duplicate_count = int(non_empty.duplicated().sum()) if not non_empty.empty else 0
+    duplicate_count = duplicate_row_count(dataframe)
     if duplicate_count:
         warnings.append(
             Finding(
