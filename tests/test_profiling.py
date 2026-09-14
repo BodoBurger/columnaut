@@ -34,3 +34,16 @@ def test_dataset_overview_counts_duplicate_rows_with_unhashable_values() -> None
 
     assert overview.duplicate_rows == 1
     pd.testing.assert_frame_equal(dataframe, original)
+
+
+def test_dataset_overview_does_not_conflate_nested_values_with_source_tuples() -> None:
+    dataframe = pd.DataFrame(
+        {
+            "value": [[1], [1], ("list", (1,)), ("list", (1,))],
+            "group": ["same", "same", "same", "same"],
+        }
+    )
+
+    overview = dataset_overview(dataframe)
+
+    assert overview.duplicate_rows == 2
