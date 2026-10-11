@@ -11,23 +11,32 @@ from pandas.api.types import is_scalar
 _COMPARABLE_VALUE = object()
 
 
-def _hashable_value(value: Any) -> Any:
+def _hashable_value(value: Any, *, nested: bool = False) -> Any:
     """Return a collision-safe hashable representation for a cell value."""
 
     if is_scalar(value) and pd.isna(value):
+        if nested:
+            return (
+                _COMPARABLE_VALUE,
+                "missing",
+                type(value).__module__,
+                type(value).__qualname__,
+            )
         return (_COMPARABLE_VALUE, "missing")
     if isinstance(value, Mapping):
         items = (
-            (_hashable_value(key), _hashable_value(item))
+            (_hashable_value(key, nested=True), _hashable_value(item, nested=True))
             for key, item in value.items()
         )
         return (_COMPARABLE_VALUE, "mapping", frozenset(items))
     if isinstance(value, list):
-        return (_COMPARABLE_VALUE, "list", tuple(_hashable_value(item) for item in value))
+        items = tuple(_hashable_value(item, nested=True) for item in value)
+        return (_COMPARABLE_VALUE, "list", items)
     if isinstance(value, tuple):
-        return (_COMPARABLE_VALUE, "tuple", tuple(_hashable_value(item) for item in value))
+        items = tuple(_hashable_value(item, nested=True) for item in value)
+        return (_COMPARABLE_VALUE, "tuple", items)
     if isinstance(value, (set, frozenset)):
-        items = frozenset(_hashable_value(item) for item in value)
+        items = frozenset(_hashable_value(item, nested=True) for item in value)
         return (_COMPARABLE_VALUE, "set", items)
 
     try:
