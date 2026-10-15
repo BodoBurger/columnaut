@@ -47,3 +47,18 @@ def test_dataset_overview_does_not_conflate_nested_values_with_source_tuples() -
     overview = dataset_overview(dataframe)
 
     assert overview.duplicate_rows == 2
+
+
+def test_dataset_overview_preserves_nested_missing_marker_types() -> None:
+    dataframe = pd.DataFrame(
+        {
+            "value": [[None], [float("nan")], [None], [float("nan")]],
+            "group": ["same", "same", "same", "same"],
+        }
+    )
+    original = dataframe.copy(deep=True)
+
+    overview = dataset_overview(dataframe)
+
+    assert overview.duplicate_rows == 2
+    pd.testing.assert_frame_equal(dataframe, original)
