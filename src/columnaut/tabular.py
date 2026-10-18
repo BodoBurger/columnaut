@@ -62,3 +62,13 @@ def duplicate_row_count(dataframe: pd.DataFrame) -> int:
     except (NotImplementedError, TypeError):
         comparable = non_empty.map(_hashable_value)
         return int(comparable.duplicated().sum())
+
+
+def unique_value_count(series: pd.Series) -> int:
+    """Count distinct non-missing values, including unhashable values without collisions."""
+
+    try:
+        return int(series.nunique(dropna=True))
+    except (NotImplementedError, TypeError):
+        comparable = series.dropna().map(_hashable_value)
+        return int(comparable.nunique(dropna=True))

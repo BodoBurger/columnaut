@@ -64,6 +64,14 @@ def test_profile_handles_unhashable_values() -> None:
     assert "constant_column" not in finding_codes(profile)
 
 
+def test_profile_does_not_conflate_unhashable_values_with_equivalent_strings() -> None:
+    profile = profile_column(pd.Series([[1], "[1]", [1]], dtype=object), "items")
+
+    assert profile.unique == 2
+    assert profile.duplicates == 1
+    assert "constant_column" not in finding_codes(profile)
+
+
 def test_numeric_strings_with_one_exception_report_inference_uncertainty() -> None:
     series = pd.Series([str(number) for number in range(1, 10)] + ["oops"])
 

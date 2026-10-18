@@ -26,6 +26,14 @@ def test_column_overview_handles_duplicate_column_names_by_position() -> None:
     assert overview["unique"].tolist() == [2, 2]
 
 
+def test_column_overview_does_not_conflate_unhashable_values_with_strings() -> None:
+    dataframe = pd.DataFrame({"value": [[1], "[1]", [1]]})
+
+    overview = column_overview(dataframe)
+
+    assert overview.loc[0, "unique"] == 2
+
+
 def test_dataset_overview_counts_duplicate_rows_with_unhashable_values() -> None:
     dataframe = pd.DataFrame({"items": [[1, 2], [1, 2], [3]]})
     original = dataframe.copy(deep=True)
