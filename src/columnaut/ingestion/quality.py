@@ -39,9 +39,7 @@ def value_family(value: Any) -> str:
 def make_unique_headers(values: Iterable[Any]) -> tuple[list[str], list[str], list[int]]:
     """Create stable column names while recording duplicate and blank headers."""
 
-    counts: Counter[str] = Counter()
-    headers: list[str] = []
-    duplicates: list[str] = []
+    bases: list[str] = []
     blank_positions: list[int] = []
 
     for position, value in enumerate(values, start=1):
@@ -50,14 +48,31 @@ def make_unique_headers(values: Iterable[Any]) -> tuple[list[str], list[str], li
             blank_positions.append(position)
         else:
             base = str(value).strip()
+        bases.append(base)
 
+    counts: Counter[str] = Counter()
+    headers: list[str] = []
+    duplicates: list[str] = []
+    reserved = {base.casefold() for base in bases}
+    used: set[str] = set()
+
+    for base in bases:
         key = base.casefold()
         counts[key] += 1
         if counts[key] > 1:
             duplicates.append(base)
-            headers.append(f"{base}__{counts[key]}")
-        else:
-            headers.append(base)
+
+        candidate = base
+        if candidate.casefold() in used:
+            suffix = max(2, counts[key])
+            while True:
+                candidate = f"{base}__{suffix}"
+                suffix += 1
+                if candidate.casefold() not in reserved and candidate.casefold() not in used:
+                    break
+
+        headers.append(candidate)
+        used.add(candidate.casefold())
 
     return headers, duplicates, blank_positions
 
