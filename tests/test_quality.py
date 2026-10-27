@@ -1,6 +1,16 @@
 import pandas as pd
 
-from columnaut.ingestion.quality import common_table_warnings
+from columnaut.ingestion.quality import common_table_warnings, make_unique_headers
+
+
+def test_unique_headers_do_not_collide_with_source_suffixes() -> None:
+    headers, duplicates, blank_positions = make_unique_headers(
+        ["Amount", "Amount", "Amount__2"]
+    )
+
+    assert headers == ["Amount", "Amount__3", "Amount__2"]
+    assert duplicates == ["Amount"]
+    assert blank_positions == []
 
 
 def test_common_warnings_handle_duplicate_column_names_by_position() -> None:
