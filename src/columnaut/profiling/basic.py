@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from columnaut.tabular import duplicate_row_count
+from columnaut.tabular import duplicate_row_count, unique_value_count
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,10 +52,7 @@ def column_overview(dataframe: pd.DataFrame) -> pd.DataFrame:
     for position, column in enumerate(dataframe.columns):
         series = dataframe.iloc[:, position]
         missing = int(series.isna().sum())
-        try:
-            unique = int(series.nunique(dropna=True))
-        except TypeError:
-            unique = int(series.dropna().astype(str).nunique())
+        unique = unique_value_count(series)
         records.append(
             {
                 "column": str(column),
