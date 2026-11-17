@@ -65,11 +65,19 @@ def test_profile_handles_unhashable_values() -> None:
 
 
 def test_profile_does_not_conflate_unhashable_values_with_equivalent_strings() -> None:
-    profile = profile_column(pd.Series([[1], "[1]", [1]], dtype=object), "items")
+    series = pd.Series([[1], "[1]", [1]], dtype=object)
+    original = series.copy(deep=True)
+
+    profile = profile_column(series, "items")
 
     assert profile.unique == 2
     assert profile.duplicates == 1
+    assert [(bucket.label, bucket.count) for bucket in profile.distribution] == [
+        ("list: [1]", 2),
+        ("str: [1]", 1),
+    ]
     assert "constant_column" not in finding_codes(profile)
+    pd.testing.assert_series_equal(series, original)
 
 
 def test_numeric_strings_with_one_exception_report_inference_uncertainty() -> None:

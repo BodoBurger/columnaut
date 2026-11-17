@@ -16,7 +16,7 @@ from pandas.api.types import (
 )
 
 from columnaut.models import Finding, FindingConfidence, FindingSeverity
-from columnaut.tabular import unique_value_count
+from columnaut.tabular import unique_value_count, value_frequencies
 
 PSEUDO_MISSING_STRINGS = frozenset(
     {
@@ -206,15 +206,18 @@ def _format_number(value: float) -> str:
 def _value_distribution(series: pd.Series, *, limit: int = 10) -> tuple[DistributionBucket, ...]:
     if series.empty:
         return ()
-    counts = series.astype("string").value_counts(dropna=False).head(limit)
+    frequencies = value_frequencies(series, limit=limit)
+    labels = [str(value) for value, _ in frequencies]
     total = len(series.index)
     return tuple(
         DistributionBucket(
-            label=str(value),
+            label=(
+                f"{type(value).__name__}: {label}" if labels.count(label) > 1 else label
+            ),
             count=int(count),
             percent=round(100 * int(count) / total, 2),
         )
-        for value, count in counts.items()
+        for (value, count), label in zip(frequencies, labels, strict=True)
     )
 
 

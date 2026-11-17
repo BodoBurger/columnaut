@@ -72,3 +72,23 @@ def unique_value_count(series: pd.Series) -> int:
     except (NotImplementedError, TypeError):
         comparable = series.dropna().map(_hashable_value)
         return int(comparable.nunique(dropna=True))
+
+
+def value_frequencies(
+    series: pd.Series,
+    *,
+    limit: int | None = None,
+) -> tuple[tuple[Any, int], ...]:
+    """Count values without conflating different source types or requiring hashability."""
+
+    representatives: dict[Any, Any] = {}
+    counts: dict[Any, int] = {}
+    for value in series.tolist():
+        comparable = _hashable_value(value)
+        representatives.setdefault(comparable, value)
+        counts[comparable] = counts.get(comparable, 0) + 1
+
+    ranked = sorted(counts, key=counts.get, reverse=True)
+    if limit is not None:
+        ranked = ranked[:limit]
+    return tuple((representatives[value], counts[value]) for value in ranked)
