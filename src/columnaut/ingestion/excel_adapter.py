@@ -40,7 +40,8 @@ class ExcelAdapter(TabularAdapter):
             sheet_name = options.sheet_name or available_sheets[0]
             if sheet_name not in available_sheets:
                 raise ValueError(f"Sheet '{sheet_name}' does not exist in this workbook.")
-            raw = workbook.parse(
+            raw = pd.read_excel(
+                workbook,
                 sheet_name=sheet_name,
                 header=None,
                 keep_default_na=False,
