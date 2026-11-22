@@ -48,7 +48,13 @@ def _hashable_value(value: Any, *, nested: bool = False) -> Any:
             type(value).__qualname__,
             repr(value),
         )
-    return (_COMPARABLE_VALUE, "scalar", value)
+    return (
+        _COMPARABLE_VALUE,
+        "scalar",
+        type(value).__module__,
+        type(value).__qualname__,
+        value,
+    )
 
 
 def duplicate_row_count(dataframe: pd.DataFrame) -> int:
@@ -57,21 +63,15 @@ def duplicate_row_count(dataframe: pd.DataFrame) -> int:
     non_empty = dataframe.dropna(how="all")
     if non_empty.empty:
         return 0
-    try:
-        return int(non_empty.duplicated().sum())
-    except (NotImplementedError, TypeError):
-        comparable = non_empty.map(_hashable_value)
-        return int(comparable.duplicated().sum())
+    comparable = non_empty.map(_hashable_value)
+    return int(comparable.duplicated().sum())
 
 
 def unique_value_count(series: pd.Series) -> int:
     """Count distinct non-missing values, including unhashable values without collisions."""
 
-    try:
-        return int(series.nunique(dropna=True))
-    except (NotImplementedError, TypeError):
-        comparable = series.dropna().map(_hashable_value)
-        return int(comparable.nunique(dropna=True))
+    comparable = series.dropna().map(_hashable_value)
+    return int(comparable.nunique(dropna=True))
 
 
 def value_frequencies(

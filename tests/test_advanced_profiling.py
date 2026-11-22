@@ -80,6 +80,22 @@ def test_profile_does_not_conflate_unhashable_values_with_equivalent_strings() -
     pd.testing.assert_series_equal(series, original)
 
 
+def test_profile_does_not_conflate_equal_scalars_of_different_types() -> None:
+    series = pd.Series([1, True, 1.0, 1], dtype=object)
+    original = series.copy(deep=True)
+
+    profile = profile_column(series, "value")
+
+    assert profile.unique == 3
+    assert profile.duplicates == 1
+    assert [(bucket.label, bucket.count) for bucket in profile.distribution] == [
+        ("1", 2),
+        ("True", 1),
+        ("1.0", 1),
+    ]
+    pd.testing.assert_series_equal(series, original)
+
+
 def test_numeric_strings_with_one_exception_report_inference_uncertainty() -> None:
     series = pd.Series([str(number) for number in range(1, 10)] + ["oops"])
 
