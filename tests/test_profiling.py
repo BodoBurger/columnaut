@@ -70,3 +70,15 @@ def test_dataset_overview_preserves_nested_missing_marker_types() -> None:
 
     assert overview.duplicate_rows == 2
     pd.testing.assert_frame_equal(dataframe, original)
+
+
+def test_dataset_overview_does_not_conflate_equal_scalars_of_different_types() -> None:
+    dataframe = pd.DataFrame(
+        {"value": pd.Series([1, True, 1.0, 1], dtype=object)}
+    )
+    original = dataframe.copy(deep=True)
+
+    overview = dataset_overview(dataframe)
+
+    assert overview.duplicate_rows == 1
+    pd.testing.assert_frame_equal(dataframe, original)
